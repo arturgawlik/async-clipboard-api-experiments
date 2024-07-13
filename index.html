@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>async clipboard api experiments</title>
+</head>
+<body>
+    <div style="margin: 30px; height: 100%; display: flex; flex-direction: column;">
+        <button id="paste-btn" style="height: 50px;">Paste as SVG</button>
+        <div id="svg-area" style="height: 300px; background-color: beige; display: flex;">
+
+        </div>
+        <button id="copy-btn" style="height: 50px;">Copy as SVG</button>
+        <button id="clear-btn" style="height: 50px; background: tomato;">Clear</button>
+        <ul id="communicats">
+
+        </ul>
+    </div>
+    
+    <script type="module">
+        initialPopulateWithSVG();
+
+        const pasteBtn = document.getElementById("paste-btn");
+        const copyBtn = document.getElementById("copy-btn");
+        const clearBtn = document.getElementById("clear-btn");
+        const svgArea = document.getElementById("svg-area");
+        const communicatsArea = document.getElementById("communicats");
+
+        pasteBtn.addEventListener("click", () => {
+            pasteSVGFromClipboard();
+            showCommunicat("SVG pasted from clipboard.");
+        });
+
+        copyBtn.addEventListener("click", () => {
+            copySVGToClipboard();
+            showCommunicat("SVG copied to clipboard.");
+        });
+
+        clearBtn.addEventListener("click", () => {
+            clearArea();
+            showCommunicat("SVG area cleared.");
+        })
+
+        async function pasteSVGFromClipboard() {
+            const clipboardSVGBlob = await readSVGBlobFromClipboard();
+            const clipboardSVG = await clipboardSVGBlob.text();
+        }
+
+        function populateContainerWithSVG(svgStr) {
+            svgArea.innerHTML = svgStr;
+        } 
+
+        async function readSVGBlobFromClipboard() {
+            const [clipboardItem] = await navigator.clipboard.read();
+            return clipboardItem.getType("image/svg+xml");
+        }
+
+        function copySVGToClipboard() {
+            const svgElem = getSVGFromDOM();
+            if (!svgElem) {
+                showCommunicat("No SVG in DOM");
+            }
+            const svgBlob = svgToBlob(svgElem);
+            writeBlobToClipboard(svgBlob);
+        }
+
+        async function writeBlobToClipboard(blob) {
+            await navigator.clipboard.write([new ClipboardItem({
+                [blob.type]: blob
+            })])
+        }
+        
+        function getSVGFromDOM() {
+            return svgArea.querySelector('svg');
+        }
+
+        function svgToBlob(svgElem) {
+            return new Blob([svgElem.outerHTML], { type: 'image/svg+xml' })
+        }
+
+        async function initialPopulateWithSVG() {
+            const svgStr = await fetch("edge.svg").then(res => res.text());
+            svgArea.innerHTML = svgStr;
+        }
+
+        function clearArea() {
+            svgArea.innerHTML = '';
+        }
+
+        function showCommunicat(text) {
+            const newLiElem = document.createElement("li")
+            newLiElem.innerText = text;
+            communicatsArea.appendChild(newLiElem);
+        }
+
+    </script>
+</body>
+</html>
